@@ -1,49 +1,52 @@
-import $ from 'jquery';
-import 'bootstrap';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import './css/styles.css';
+import $ from "jquery";
+import "bootstrap";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "./css/styles.css";
+import GiphyApp from "./giphy.js";
 
-//UI logic
-function makeAPICall (apiParam, divToUpdate) {
-  let request = new XMLHttpRequest();
-  const functionUrl = `http://api.giphy.com/v1/gifs/${apiParam}limit=5&rating=PG&api_key=${process.env.API_KEY}`;
-
-
-  console.log(functionUrl);
-  request.onreadystatechange = function() {
-    if (this.readyState === 4 && this.status === 200) {
-      const response = JSON.parse(this.responseText);
-      getElements(response);
-    }
-  };
-
-  request.open("GET", functionUrl, true);
-  request.send();
-
-  function getElements(response) {
-
-    if (apiParam === "random?") {
-      $(`.${divToUpdate}`).html(`<img src ="${response.data.images.original.url}" alt="random gif">`);
-    } else {
-      response.data.forEach((gif) => {
-        $(`.${divToUpdate}`).append(`<img src ="${gif.images.original.url}" alt="trending gifs">`);
-      });
-    }
-  }
+function getElements(response) {
+  response.data.forEach((gif) => {
+    $(".trendingGifs").append(
+      `<img src ="${gif.images.original.url}" alt="trending gifs">`
+    );
+  });
+}
+function getSearchElements(response) {
+  response.data.forEach((gif) => {
+    $(".gif-result").append(
+      `<img src="${gif.images.original.url}" alt="firstImage">`
+    );
+  });
+}
+function getRandomElements(response) {
+  $(".random-result").append(`<img src="${response.data.images.original.url}" alt="firstImage">`);
 }
 
-$(document).ready(function() {
 
-
-  makeAPICall(`trending?`,"trendingGifs");
-
-  $('#random-image').click(function() {
-    makeAPICall('random?',"random-result");
+//UI logic
+$(document).ready(function () {
+  let promise = GiphyApp.trendingGifs();
+  promise.then(function (response) {
+    const body = JSON.parse(response);
+    getElements(body);
   });
-  $('#search').click(function() {
+
+  $("#search").click(function () {
     const searchTerm = $("#gif-search").val();
-    $('#gif-search').val("");
-    makeAPICall(`search?q=${searchTerm}&`,"gif-result");
+    $("#gif-search").val("");
+    let promise = GiphyApp.searchGifs(searchTerm);
+    promise.then(function (response) {
+      const body = JSON.parse(response);
+      getSearchElements(body);
+    });
   });
 
+  $("#random-image").click(function () {
+    $("#random-result").val("");
+    let promise = GiphyApp.randomGif();
+    promise.then(function (response) {
+      const body = JSON.parse(response);
+      getRandomElements(body);
+    });
+  });
 });
